@@ -1,10 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const https = require('https');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const server = http.createServer(app);
+const io =new Server(server, {cors: { origin: 'http://localhost:5173'}})
 
 const PORT = 3001;
 
@@ -15,12 +19,21 @@ app.get('/api/questions', async (req, res) => {
         res.json(data.results)
     }
     catch(error){
-        res.status(500).json({error: 'Something went wrong'})
         console.log(error)
+        res.status(500).json({error: 'Something went wrong'})
+        
     }
 });
 
-app.listen(PORT, () => {
+io.on('connection', (socket) => {
+        console.log('A user connected:', socket.id)
+
+        socket.on('disconnect', () => {
+            console.log('User disconnected:', socket.id)
+    })
+})
+
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
