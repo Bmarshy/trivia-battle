@@ -25,8 +25,38 @@ app.get('/api/questions', async (req, res) => {
     }
 });
 
+const rooms = {}
+function generateRoomCode(){
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    let roomCode = ""
+    for(let i=0; i<4; i++){
+        roomCode += alphabet[Math.floor(Math.random()* alphabet.length)]
+    }
+    return roomCode
+}
+
 io.on('connection', (socket) => {
         console.log('A user connected:', socket.id)
+
+        socket.on('create-room', (data) => {
+            let roomCode = generateRoomCode()
+            rooms[roomCode] = {players: [{ id: socket.id, name: data.playerName}], host: socket.id}
+            socket.join(roomCode)
+            socket.emit('room-created', {roomCode})
+        })
+
+        socket.on('join-room', (data) => {
+            if(!rooms[data.roomCode]){
+                socket.emit('error', {message: 'Room not found'})
+                return
+            }
+            else{
+                rooms[data.roomCode].players.push({ id: socket.id, name: data.playerName})
+                socket.join(data.roomCode)
+                socket.emit('room-joined', { roomCode: data.roomCode, players: rooms[data.roomCode].players })
+                socket.to(data.roomCode).emit('player-joined', {players: rooms[data.roomCode].players})
+            }
+        })
 
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id)
