@@ -60,7 +60,19 @@ io.on('connection', (socket) => {
 
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id)
-    })
+            const code = Object.keys(rooms)
+            for(let i = 0; i < code.length; i++){
+                if(rooms[code[i]].players.some(p => p.id === socket.id)){
+                    rooms[code[i]].players = rooms[code[i]].players.filter(p => p.id !== socket.id)
+                    if(rooms[code[i]].players.length === 0){
+                        delete rooms[code[i]]
+                    }
+                    else io.to(code[i]).emit('player-left', {players: rooms[code[i]].players})
+
+                }
+                
+            }
+        })
 })
 
 server.listen(PORT, () => {
