@@ -13,6 +13,8 @@ function App() {
   const [players, setPlayers] = useState([])
   const [gamePhase, setGamePhase] = useState("home")
   const [isHost, setIsHost] = useState(false)
+  const [questionIndex, setQuestionIndex] = useState(0)
+  const [question, setQuestion] = useState(null)
  
   function handleCreateRoom(){
     if(!playerName) return
@@ -28,6 +30,7 @@ function App() {
 
   function handleStartGame(){
     console.log("Game Started")
+    socket.emit('start-game', {roomCode})
   }
 
   useEffect(() => {
@@ -58,6 +61,13 @@ function App() {
       console.log('Player has left:', socket.id)
       setPlayers(data.players)  
     })
+    socket.on('game-started', (data) => {
+      console.log('Game has started')
+      setQuestionIndex(0)
+      setQuestion(data.question)
+      setGamePhase("game")
+    })
+
     return () => {
       socket.off('connect')
       socket.off('disconnect')
@@ -65,6 +75,7 @@ function App() {
       socket.off('room-joined')
       socket.off('player-joined')
       socket.off('player-left')
+      socket.off('game-started')
     }
   }, [playerName])
 
@@ -75,7 +86,7 @@ function App() {
   if(gamePhase === "lobby"){
     return <LobbyScreen roomCode={roomCode} players={players} isHost={isHost} handleStartGame={handleStartGame}/>
   }
-  return <GameScreen players={players} roomCode={roomCode}/>
+  return <GameScreen players={players} roomCode={roomCode} question={question} questionIndex={questionIndex}/>
 }
 
 export default App

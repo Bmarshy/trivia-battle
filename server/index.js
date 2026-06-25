@@ -58,6 +58,20 @@ io.on('connection', (socket) => {
             }
         })
 
+        socket.on('start-game', async ({roomCode}) => {
+            try{
+                const response = await fetch('https://opentdb.com/api.php?amount=10&type=multiple')
+                const data = await response.json()
+                rooms[roomCode].questions = data.results
+                rooms[roomCode].questionIndex = 0
+                io.to(roomCode).emit('game-started', {question: rooms[roomCode].questions[0], questionIndex: rooms[roomCode].questionIndex})
+            }
+            catch(error){
+                console.log(error)
+                io.to(roomCode).emit('error', {message: 'Failed to Fetch Questions'})
+            }
+        })
+
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id)
             const code = Object.keys(rooms)
