@@ -1,6 +1,9 @@
 import React from "react"
 import {useEffect, useState} from 'react'
 import io from 'socket.io-client'
+import HomeScreen from "./HomeScreen"
+import LobbyScreen from "./LobbyScreen"
+import GameScreen from "./GameScreen"
 
 const socket = io('http://localhost:3001')
 
@@ -8,7 +11,8 @@ function App() {
   const [playerName, setPlayerName] = useState("")
   const [roomCode, setRoomCode] = useState("")
   const [players, setPlayers] = useState([])
-  const [gamePhase, setGamePhase] = useState("home") 
+  const [gamePhase, setGamePhase] = useState("home")
+  const [isHost, setIsHost] = useState(false)
  
   function handleCreateRoom(){
     if(!playerName) return
@@ -22,6 +26,10 @@ function App() {
     socket.emit('join-room', {playerName, roomCode})
   }
 
+  function handleStartGame(){
+    console.log("Game Started")
+  }
+
   useEffect(() => {
     socket.on('connect', () =>{
       console.log('Connected to server:', socket.id)
@@ -33,6 +41,7 @@ function App() {
       console.log('Room was created:', socket.id)
       setRoomCode(data.roomCode)
       setPlayers([{ id: socket.id, name: playerName}])
+      setIsHost(true)
       setGamePhase("lobby")
     })
     socket.on('room-joined', (data) => {
@@ -61,25 +70,12 @@ function App() {
 
 
   if(gamePhase === "home"){
-    return <div>
-      <input type = "text" value = {playerName} onChange= {(e) => setPlayerName(e.target.value)} placeholder="Insert Player Name"></input>
-      <input type = "text" value = {roomCode} onChange= {(e) => setRoomCode(e.target.value)} placeholder="Join Room Code"></input>
-      <button onClick = {handleCreateRoom}>Create Room</button>
-      <button onClick = {handleJoinRoom}>Join Room</button>  
-    </div>
+    return <HomeScreen playerName={playerName} setPlayerName={setPlayerName} roomCode={roomCode} setRoomCode={setRoomCode} handleCreateRoom={handleCreateRoom} handleJoinRoom={handleJoinRoom}/>
   }
   if(gamePhase === "lobby"){
-    return <div>
-      <p>Room Code: {roomCode}</p>
-      <ul>
-        {players.map((player) => (
-          <li key={player.id}>{player.name}</li>
-        ))}
-      </ul>
-      <button>Start Game</button>
-    </div>
+    return <LobbyScreen roomCode={roomCode} players={players} isHost={isHost} handleStartGame={handleStartGame}/>
   }
-  return <div>Game Goes Here</div>
+  return <GameScreen players={players} roomCode={roomCode}/>
 }
 
 export default App
