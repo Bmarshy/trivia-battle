@@ -15,6 +15,8 @@ function App() {
   const [isHost, setIsHost] = useState(false)
   const [questionIndex, setQuestionIndex] = useState(0)
   const [question, setQuestion] = useState(null)
+  const [scores, setScores] = useState({})
+  const [correctAnswer, setCorrectAnswer] = useState("")
  
   function handleCreateRoom(){
     if(!playerName) return
@@ -31,6 +33,10 @@ function App() {
   function handleStartGame(){
     console.log("Game Started")
     socket.emit('start-game', {roomCode})
+  }
+
+  function handleAnswer(answer){
+    socket.emit('submit-answer', {roomCode, answer, questionIndex})
   }
 
   useEffect(() => {
@@ -67,6 +73,20 @@ function App() {
       setQuestion(data.question)
       setGamePhase("game")
     })
+    socket.on('question-results', (data) => {
+      setScores(data.scores)
+      setCorrectAnswer(data.correctAnswer)
+      setGamePhase("results")
+    })
+    socket.on('next-question', (data) => {
+      setQuestion(data.question)
+      setQuestionIndex(data.questionIndex)
+      setGamePhase("game")
+    })
+    socket.on('end-game', (data) => {
+      setScores(data.scores)
+      setGamePhase("endgame")
+    })
 
     return () => {
       socket.off('connect')
@@ -76,6 +96,9 @@ function App() {
       socket.off('player-joined')
       socket.off('player-left')
       socket.off('game-started')
+      socket.off('question-results')
+      socket.off('next-question')
+      socket.off('end-game')
     }
   }, [playerName])
 
@@ -86,7 +109,13 @@ function App() {
   if(gamePhase === "lobby"){
     return <LobbyScreen roomCode={roomCode} players={players} isHost={isHost} handleStartGame={handleStartGame}/>
   }
-  return <GameScreen players={players} roomCode={roomCode} question={question} questionIndex={questionIndex}/>
+  if(gamePhase === "results"){
+    return <div>results</div>
+  }
+  if(gamePhase === "endgame"){
+    return <div>end game</div>
+  }
+  return <GameScreen players={players} roomCode={roomCode} question={question} questionIndex={questionIndex} handleAnswer={handleAnswer}/>
 }
 
 export default App

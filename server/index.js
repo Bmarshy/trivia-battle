@@ -35,6 +35,19 @@ function generateRoomCode(){
     return roomCode
 }
 
+function emitQuestionResults(roomCode){
+    const room = rooms[roomCode]
+    io.to(roomCode).emit('question-results', {correctAnswer: room.questions[room.questionIndex].correct_answer, scores: room.scores})
+    setTimeout(() => {
+        if(room.questionIndex < room.questions.length -1){
+            room.questionIndex++
+            room.answers = {}
+            io.to(roomCode).emit('next-question', {question: room.questions[room.questionIndex], questionIndex: room.questionIndex})    
+        } 
+        else io.to(roomCode).emit('end-game', {scores: room.scores})    
+    }, 5000)
+}
+
 io.on('connection', (socket) => {
         console.log('A user connected:', socket.id)
 
@@ -64,12 +77,29 @@ io.on('connection', (socket) => {
                 const data = await response.json()
                 rooms[roomCode].questions = data.results
                 rooms[roomCode].questionIndex = 0
+                rooms[roomCode].scores = {}
+                rooms[roomCode].players.forEach(player => {
+                    rooms[roomCode].scores[player.id] = 0
+                })
+                rooms[roomCode].answers = {}
+
                 io.to(roomCode).emit('game-started', {question: rooms[roomCode].questions[0], questionIndex: rooms[roomCode].questionIndex})
             }
             catch(error){
                 console.log(error)
                 io.to(roomCode).emit('error', {message: 'Failed to Fetch Questions'})
             }
+        })
+
+        socket.on('submit-answer', ({roomCode, answer, questionIndex}) => {
+            const room = rooms[roomCode]
+            if(room.answers[socket.id]) return
+
+            room.answers[socket.id] = answer
+            const currentQuestion = room.questions[room.questionIndex]
+            if (answer === currentQuestion.correct_answer) room.scores[socket.id] += 10
+
+            if(Object.keys(room.answers).length === room.players.length) emitQuestionResults(roomCode)
         })
 
         socket.on('disconnect', () => {

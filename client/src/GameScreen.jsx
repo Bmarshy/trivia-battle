@@ -1,8 +1,8 @@
-import {useMemo} from 'react'
+import {useMemo, useEffect, useState} from 'react'
 import { decodeHTML } from './utils'
 
-function GameScreen({ players, roomCode, question, questionIndex}){
-    
+function GameScreen({ players, roomCode, question, questionIndex, handleAnswer}){
+    const [hasAnswered, setHasAnswered] = useState(false)
 
     const shuffledAnswers = useMemo(() => {
         if(!question) return []
@@ -12,6 +12,10 @@ function GameScreen({ players, roomCode, question, questionIndex}){
         return answers
     }, [question])
     
+    useEffect(() => {
+        setHasAnswered(false)
+    }, [question])
+
     if(!question) return <div>Loading . . .</div>
 
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -20,7 +24,16 @@ function GameScreen({ players, roomCode, question, questionIndex}){
                 <p className="text-2xl text-white text-center mb-2">{decodeHTML(question.question)}</p>
                 <div className="flex flex-col gap-3 mt-4">
                     {shuffledAnswers.map((answer) => (
-                    <button key={answer} className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-lg transition text-left">{decodeHTML(answer)}</button>
+                    <button 
+                        onClick={() => {
+                            setHasAnswered(true)
+                            handleAnswer(answer)
+                        }} 
+                        key={answer}
+                        disabled={hasAnswered}
+                        className={`bg-gray-700 text-white px-4 py-3 rounded-lg transition text-left ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-600'}`}>
+                            {decodeHTML(answer)}
+                    </button>
                     ))}
                 </div>
             </div>
