@@ -4,9 +4,10 @@ function LobbyScreen({ roomCode, players, isHost, handleStartGame}){
 
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 p-8 rounded-lg w-full max-w-md">
-            <h1 className="text-2xl font-bold text-white text-center mb-2">Waiting for players . . .</h1>
-            <p className="text-gray-400 text-sm text-center mb-1 underline">Room Code</p>
-            <p className="text-4xl font-bold text-blue-400 text-center tracking-widest mb-6">{roomCode}</p>
+            <h1 className="text-4xl font-bold text-white text-center">Lobby</h1>
+            <h1 className="text-2xl text-gray-400 text-center mb-2">Waiting for players . . .</h1>
+            <p className="text-gray-400 text-sm text-center underline">Room Code</p>
+            <p className="text-4xl font-bold text-blue-400 text-center tracking-widest mb-2">{roomCode}</p>
             <h2 className="  text-gray-400  mb-2">Players: {players.length}/8</h2>
             <ul className="list-none p-0">
                 {players.map((player) => (

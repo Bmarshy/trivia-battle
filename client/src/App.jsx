@@ -4,6 +4,7 @@ import io from 'socket.io-client'
 import HomeScreen from "./HomeScreen"
 import LobbyScreen from "./LobbyScreen"
 import GameScreen from "./GameScreen"
+import EndScreen from "./EndScreen"
 
 const socket = io('http://localhost:3001')
 
@@ -37,6 +38,10 @@ function App() {
 
   function handleAnswer(answer){
     socket.emit('submit-answer', {roomCode, answer, questionIndex})
+  }
+
+  function handlePlayAgain(){
+    socket.emit('play-again', {roomCode})
   }
 
   useEffect(() => {
@@ -88,6 +93,11 @@ function App() {
       setGamePhase("endgame")
     })
 
+    socket.on('returned-to-lobby', (data) => {
+      setPlayers(data.players)
+      setGamePhase("lobby")
+    })
+
     return () => {
       socket.off('connect')
       socket.off('disconnect')
@@ -99,6 +109,7 @@ function App() {
       socket.off('question-results')
       socket.off('next-question')
       socket.off('end-game')
+      socket.off('returned-to-lobby')
     }
   }, [playerName])
 
@@ -113,7 +124,7 @@ function App() {
     return <div>results</div>
   }
   if(gamePhase === "endgame"){
-    return <div>end game</div>
+    return <EndScreen scores={scores} players={players} isHost={isHost} handlePlayAgain={handlePlayAgain}/>
   }
   return <GameScreen players={players} roomCode={roomCode} question={question} questionIndex={questionIndex} handleAnswer={handleAnswer}/>
 }

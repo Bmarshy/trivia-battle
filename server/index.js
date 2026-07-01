@@ -48,6 +48,25 @@ function emitQuestionResults(roomCode){
     }, 5000)
 }
 
+async function startGame(roomCode) {
+    try {
+        const response = await fetch('https://opentdb.com/api.php?amount=10&type=multiple')
+        const data = await response.json()
+        rooms[roomCode].questions = data.results
+        rooms[roomCode].questionIndex = 0
+        rooms[roomCode].scores = {}
+        rooms[roomCode].players.forEach(player => {
+            rooms[roomCode].scores[player.id] = 0
+        })
+        rooms[roomCode].answers = {}
+        io.to(roomCode).emit('game-started', { question: rooms[roomCode].questions[0], questionIndex: 0 })
+    }
+    catch(error) {
+        console.log(error)
+        io.to(roomCode).emit('error', { message: 'Failed to fetch questions' })
+    }
+}
+
 io.on('connection', (socket) => {
         console.log('A user connected:', socket.id)
 
@@ -71,25 +90,7 @@ io.on('connection', (socket) => {
             }
         })
 
-        socket.on('start-game', async ({roomCode}) => {
-            try{
-                const response = await fetch('https://opentdb.com/api.php?amount=10&type=multiple')
-                const data = await response.json()
-                rooms[roomCode].questions = data.results
-                rooms[roomCode].questionIndex = 0
-                rooms[roomCode].scores = {}
-                rooms[roomCode].players.forEach(player => {
-                    rooms[roomCode].scores[player.id] = 0
-                })
-                rooms[roomCode].answers = {}
-
-                io.to(roomCode).emit('game-started', {question: rooms[roomCode].questions[0], questionIndex: rooms[roomCode].questionIndex})
-            }
-            catch(error){
-                console.log(error)
-                io.to(roomCode).emit('error', {message: 'Failed to Fetch Questions'})
-            }
-        })
+        socket.on('start-game', ({roomCode}) => startGame(roomCode))
 
         socket.on('submit-answer', ({roomCode, answer, questionIndex}) => {
             const room = rooms[roomCode]
@@ -100,6 +101,14 @@ io.on('connection', (socket) => {
             if (answer === currentQuestion.correct_answer) room.scores[socket.id] += 10
 
             if(Object.keys(room.answers).length === room.players.length) emitQuestionResults(roomCode)
+        })
+
+        socket.on('play-again', ({roomCode}) => {
+            rooms[roomCode].questions = []
+            rooms[roomCode].questionIndex = 0
+            rooms[roomCode].scores = {}
+            rooms[roomCode].answers = {}
+            io.to(roomCode).emit('returned-to-lobby', { players: rooms[roomCode].players })
         })
 
         socket.on('disconnect', () => {
