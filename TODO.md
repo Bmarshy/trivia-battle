@@ -4,3 +4,4 @@
 - Add max room size (e.g. 8 players) with server-side enforcement
 - Add room size selector for host in lobby
 - Answer time limit selector for host in lobby
+- Show live countdown during questions

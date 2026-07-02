@@ -5,6 +5,7 @@ import HomeScreen from "./HomeScreen"
 import LobbyScreen from "./LobbyScreen"
 import GameScreen from "./GameScreen"
 import EndScreen from "./EndScreen"
+import ResultsScreen from "./ResultsScreen"
 
 const socket = io('http://localhost:3001')
 
@@ -121,7 +122,7 @@ function App() {
     return <LobbyScreen roomCode={roomCode} players={players} isHost={isHost} handleStartGame={handleStartGame}/>
   }
   if(gamePhase === "results"){
-    return <div>results</div>
+    return <ResultsScreen scores={scores} players={players} correctAnswer={correctAnswer}/>
   }
   if(gamePhase === "endgame"){
     return <EndScreen scores={scores} players={players} isHost={isHost} handlePlayAgain={handlePlayAgain}/>
