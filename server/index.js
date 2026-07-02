@@ -48,9 +48,12 @@ function emitQuestionResults(roomCode){
     }, 5000)
 }
 
-async function startGame(roomCode) {
+async function startGame(roomCode, category, difficulty) {
     try {
-        const response = await fetch('https://opentdb.com/api.php?amount=10&type=multiple')
+        let url = 'https://opentdb.com/api.php?amount=10&type=multiple'
+        if(category) url += `&category=${category}`
+        if(difficulty) url += `&difficulty=${difficulty}`
+        const response = await fetch(url)
         const data = await response.json()
         rooms[roomCode].questions = data.results
         rooms[roomCode].questionIndex = 0
@@ -59,6 +62,8 @@ async function startGame(roomCode) {
             rooms[roomCode].scores[player.id] = 0
         })
         rooms[roomCode].answers = {}
+        rooms[roomCode].category = category
+        rooms[roomCode].difficulty = difficulty
         io.to(roomCode).emit('game-started', { question: rooms[roomCode].questions[0], questionIndex: 0 })
     }
     catch(error) {
@@ -90,7 +95,13 @@ io.on('connection', (socket) => {
             }
         })
 
-        socket.on('start-game', ({roomCode}) => startGame(roomCode))
+        socket.on('settings-changed', ({ roomCode, category, difficulty }) => {
+            rooms[roomCode].category = category
+            rooms[roomCode].difficulty = difficulty
+            socket.to(roomCode).emit('settings-changed', { category, difficulty })
+        })
+
+        socket.on('start-game', ({roomCode, category, difficulty}) => startGame(roomCode, category, difficulty))
 
         socket.on('submit-answer', ({roomCode, answer, questionIndex}) => {
             const room = rooms[roomCode]
@@ -103,7 +114,7 @@ io.on('connection', (socket) => {
             if(Object.keys(room.answers).length === room.players.length) emitQuestionResults(roomCode)
         })
 
-        socket.on('play-again', ({roomCode}) => {
+        socket.on('play-again', ({roomCode, category, difficulty}) => {
             rooms[roomCode].questions = []
             rooms[roomCode].questionIndex = 0
             rooms[roomCode].scores = {}

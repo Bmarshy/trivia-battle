@@ -5,3 +5,4 @@
 - Add room size selector for host in lobby
 - Answer time limit selector for host in lobby
 - Show live countdown during questions
+- Intuitive way to leave lobby besides reload

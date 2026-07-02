@@ -19,6 +19,8 @@ function App() {
   const [question, setQuestion] = useState(null)
   const [scores, setScores] = useState({})
   const [correctAnswer, setCorrectAnswer] = useState("")
+  const [category, setCategory] = useState("")
+  const [difficulty, setDifficulty] = useState("medium")
  
   function handleCreateRoom(){
     if(!playerName) return
@@ -34,7 +36,7 @@ function App() {
 
   function handleStartGame(){
     console.log("Game Started")
-    socket.emit('start-game', {roomCode})
+    socket.emit('start-game', {roomCode, category, difficulty})
   }
 
   function handleAnswer(answer){
@@ -44,6 +46,11 @@ function App() {
   function handlePlayAgain(){
     socket.emit('play-again', {roomCode})
   }
+
+  useEffect(() => {
+    if(!isHost || gamePhase !== 'lobby') return
+    socket.emit('settings-changed', { roomCode, category, difficulty })
+  }, [category, difficulty])
 
   useEffect(() => {
     socket.on('connect', () =>{
@@ -72,6 +79,10 @@ function App() {
     socket.on('player-left', (data) => {
       console.log('Player has left:', socket.id)
       setPlayers(data.players)  
+    })
+    socket.on('settings-changed', (data) => {
+      setCategory(data.category)
+      setDifficulty(data.difficulty)
     })
     socket.on('game-started', (data) => {
       console.log('Game has started')
@@ -106,6 +117,7 @@ function App() {
       socket.off('room-joined')
       socket.off('player-joined')
       socket.off('player-left')
+      socket.off('settings-changed')
       socket.off('game-started')
       socket.off('question-results')
       socket.off('next-question')
@@ -119,7 +131,7 @@ function App() {
     return <HomeScreen playerName={playerName} setPlayerName={setPlayerName} roomCode={roomCode} setRoomCode={setRoomCode} handleCreateRoom={handleCreateRoom} handleJoinRoom={handleJoinRoom}/>
   }
   if(gamePhase === "lobby"){
-    return <LobbyScreen roomCode={roomCode} players={players} isHost={isHost} handleStartGame={handleStartGame}/>
+    return <LobbyScreen roomCode={roomCode} players={players} isHost={isHost} handleStartGame={handleStartGame} category={category} setCategory={setCategory} difficulty={difficulty} setDifficulty={setDifficulty}/>
   }
   if(gamePhase === "results"){
     return <ResultsScreen scores={scores} players={players} correctAnswer={correctAnswer}/>
